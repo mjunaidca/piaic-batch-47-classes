@@ -1,48 +1,45 @@
-from fastapi import FastAPI
-from sqlmodel import SQLModel, Field, create_engine, Session
+from fastapi import  FastAPI
+from typing import Union, Optional
 from app import settings
-from contextlib import asynccontextmanager
+from sqlmodel import Field,Session,SQLModel,create_engine,select
 
-class ToDo(SQLModel, table=True):
-    id: int = Field(primary_key=True)
-    content: str
+class Todo(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    content: str = Field(index=True)
 
-connection_string = str(settings.DATABASE_URL).replace(
-    "postgresql", "postgresql+psycopg"
-)
 
-engine = create_engine(
-    connection_string
-)
+Connection_string=str(settings.DATABASE_URL).replace("postgresql","postgresql+psycopg")
 
-def create_tables():
-    print("DB_URL\n", connection_string)
+#start Engine
+engine = create_engine(Connection_string,connect_args= {"sslmode":"require"}, pool_recycle=300)
+
+#create db schema
+
+def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
-@asynccontextmanager
-async def LahoreClass(app: FastAPI):
-    print("Creating tables..")
-    create_tables()
-    yield
 
-app = FastAPI(lifespan=LahoreClass)
+app= FastAPI()
 
+@app.get("/health/")
+def health():
+    create_db_and_tables()
+    return {"status": "ok"}
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+    return{ "Hello": "World"}
 
-# 1. Create Todo
-@app.post("/todo")
-def create_todo(todo_content: ToDo):
+@app.post("/todos/")
+def create_todo(todo:Todo):
     with Session(engine) as session:
-        session.add(todo_content)
+        session.add(todo)
         session.commit()
+        session.refresh(todo)
+        return todo
 
-    return todo_content
-
-@app.get("/todo")
-def get_todo():
+@app.get("/todos/")
+def read_todos():
     with Session(engine) as session:
-        query = session.exec(ToDo).all()
-        return query
+        todos=session.exec(select(Todo)).all()
+        return todos
