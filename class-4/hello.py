@@ -1,6 +1,10 @@
+# poetry install --no-root  
+# poetry run python hello.py
+
 from sqlmodel import SQLModel, Field, create_engine, Session, select
 
-DATABASE_URL: str = "postgresql://todo_owner:ipgcEC0fJd4s@ep-old-block-a5y75062.us-east-2.aws.neon.tech/sqlmodel?sslmode=require"
+# Add your neon.tech Database URL
+DATABASE_URL: str = "postgresql://todo_owner:ipgcEC0fJd4s@ep-old-block-a5y75062.us-east-2.aws.neon.tech/sql?sslmode=require"
 
 class Students(SQLModel, table=True):
     id: int | None = Field(primary_key=True, default=None)
